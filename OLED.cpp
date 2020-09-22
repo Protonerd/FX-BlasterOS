@@ -96,6 +96,8 @@ void DisplayStartScreen() {
       display.setTextColor(WHITE);
       display.setTextSize(1);
       display.setCursor(0,0);
+      display.drawBitmap(0, 0,  PW_Logo, 32, 32, WHITE);
+      display.setCursor(35,0);
       display.println(INTROTEXT);
       #if defined V_MK1
         display.println("MK1");
@@ -105,16 +107,26 @@ void DisplayStartScreen() {
         #else
           #if defined V_MK3
             display.println("MK3");
+          #else
+            #if defined V_MK4
+              display.println("E11 Special MK4");
+            #else
+              #if defined V_MKX
+                display.setCursor(35,10);
+                display.println("MK-X");
+              #endif
+            #endif
           #endif
         #endif
       #endif
     #endif
     #if defined OLED_SCOPE
         display.clearDisplay();
-        display.drawCircle(display.width()/2, display.height()/2, (min(display.width(),display.height())/2)-1, WHITE);
-        display.drawCircle(display.width()/2, display.height()/2, (min(display.width(),display.height())/4)-1, WHITE);
-        display.drawFastVLine(display.width()/2, 0,min(display.width(),display.height()),WHITE);
-        display.drawFastHLine(0, display.height()/2,min(display.width(),display.height()),WHITE);
+        display.drawBitmap(8, 0,  PW_Logo, 48, 48, WHITE);
+        //display.drawCircle(display.width()/2, display.height()/2, (min(display.width(),display.height())/2)-1, WHITE);
+        //display.drawCircle(display.width()/2, display.height()/2, (min(display.width(),display.height())/4)-1, WHITE);
+        //display.drawFastVLine(display.width()/2, 0,min(display.width(),display.height()),WHITE);
+        //display.drawFastHLine(0, display.height()/2,min(display.width(),display.height()),WHITE);
     #endif
     display.display();
   #endif
@@ -129,19 +141,6 @@ void DisplayBlasterOnFrames() {
       switch(storage.sndProfile[storage.soundFont].DisplaySkins) {
         default:
         case DS_E11:
-    /*      display.setTextSize(1);
-          display.setRotation(3);
-          display.print("Ammo Cnt");
-          display.setRotation(0);
-          display.drawRect(22,0, display.width(),display.height(), WHITE);
-          display.setCursor(24,9); // 9+15 (it seems that a size 3 char is 15 pixels wide)
-          display.setTextColor(WHITE);
-          display.setTextSize(3);
-          display.print("0000");
-          if (AmmoCnt<10) {
-            display.print("0");
-          }
-           display.print(AmmoCnt);*/
           break;
         case DS_BH:
     /*      display.setTextSize(1);
@@ -154,6 +153,7 @@ void DisplayBlasterOnFrames() {
           display.setRotation(0);*/
           break;
         case DS_BARS:
+          display.clearDisplay();
           display.setTextSize(1);
           display.setTextColor(WHITE);
            display.println(CUSTOMTEXT);
@@ -161,6 +161,7 @@ void DisplayBlasterOnFrames() {
           display.setCursor(45,DSPL_AC_Y+DSPL_AC_H/2);
           display.println("Ammo");
           // draw an ammo count rectange at the lower left corner
+          //display.drawBitmap(20, 0,  E11_oled, 75, 32, WHITE);
           display.drawRect(DSPL_AC_X,DSPL_AC_Y, DSPL_AC_W, DSPL_AC_H, WHITE); // do not shift to the very rigth corner as it is covered by the blaster body
           break;
         
@@ -168,10 +169,24 @@ void DisplayBlasterOnFrames() {
     #endif
     #if defined OLED_SCOPE
         display.clearDisplay();
-        display.drawCircle(display.width()/2, display.height()/2, (min(display.width(),display.height())/2)-1, WHITE);
-        display.drawCircle(display.width()/2, display.height()/2, (min(display.width(),display.height())/4)-1, WHITE);
-        display.drawFastVLine(display.width()/2, 0,min(display.width(),display.height()),WHITE);
-        display.drawFastHLine(0, display.height()/2,min(display.width(),display.height()),WHITE);
+        switch(storage.sndProfile[storage.soundFont].DisplaySkins) {
+          default:
+          case DS_E11:
+            display.drawBitmap(8, 0,  crosshait_style1, 48, 48, WHITE);
+            break;
+          case DS_BH:
+            display.drawBitmap(8, 0,  crosshait_style2, 48, 48, WHITE);
+            break;
+          case DS_BARS:
+            display.drawBitmap(8, 0,  crosshait_style3, 48, 48, WHITE);
+            break;
+        }
+                
+        
+        //display.drawCircle(display.width()/2, display.height()/2, (min(display.width(),display.height())/2)-1, WHITE);
+        //display.drawCircle(display.width()/2, display.height()/2, (min(display.width(),display.height())/4)-1, WHITE);
+        //display.drawFastVLine(display.width()/2, 0,min(display.width(),display.height()),WHITE);
+        //display.drawFastHLine(0, display.height()/2,min(display.width(),display.height()),WHITE);
     #endif 
       display.display();
   #endif
@@ -226,6 +241,8 @@ void DisplayAmmoCount(uint8_t AmmoCnt, int16_t iAngle=-1) {
         break;
         case DS_BARS:
           display.fillRect(DSPL_AC_X+1,DSPL_AC_Y+1, DSPL_AC_W-2, DSPL_AC_H-2, BLACK);
+          //display.clearDisplay();
+          //display.drawBitmap(20, 0,  E11_oled, 75, 32, WHITE);
           display.setCursor(DSPL_AC_X+4,DSPL_AC_Y+2);
           display.setTextSize(2);
           display.setTextColor(WHITE);
@@ -235,21 +252,33 @@ void DisplayAmmoCount(uint8_t AmmoCnt, int16_t iAngle=-1) {
     #endif // OLED_STD
     #if defined OLED_SCOPE
         display.clearDisplay();
-        display.drawCircle(display.width()/2, display.height()/2, (min(display.width(),display.height())/2)-1, WHITE);
-        display.drawCircle(display.width()/2, display.height()/2, (min(display.width(),display.height())/4)-1, WHITE);
-        display.drawFastVLine(display.width()/2, 0,min(display.width(),display.height()),WHITE);
-        display.drawFastHLine(0, display.height()/2,display.width(),WHITE);
-        if (iAngle>-1) {
-          display.drawLine(display.width()/2, display.height()/2, (display.width()/2 + (sin (iAngle*PI/180) * min(display.width(),display.height()))/2)-1, (display.height()/2 + (cos (iAngle*PI/180) * min(display.width(),display.height()))/2)-1, WHITE);
-          Serial.print(iAngle);Serial.print("     ");Serial.print(sin (iAngle*PI/180)); Serial.print("     "); Serial.println(cos (iAngle*PI/180));    
+      switch(storage.sndProfile[storage.soundFont].DisplaySkins) {
+          default:
+          case DS_E11:
+            display.drawBitmap(8, 0,  crosshait_style1, 48, 48, WHITE);
+            display.setCursor(30,3);
+           break;
+          case DS_BH:
+            display.drawBitmap(8, 0,  crosshait_style2, 48, 48, WHITE);
+            display.setCursor(0,3);
+           break;
+          case DS_BARS:
+            display.drawBitmap(8, 0,  crosshait_style3, 48, 48, WHITE);
+            display.setCursor(0,3);
+            break;
         }
-        display.setCursor(3,3);
         display.setTextSize(1);
         display.setTextColor(WHITE);
         display.print(AmmoCnt);
-        display.setCursor(display.width()-3-8,display.height()-3-8);
-        display.print(ActionModeSubStates);
+         if (iAngle>-1) {
+          display.drawLine(display.width()/2, display.height()/2, (display.width()/2 + (sin (iAngle*PI/180) * min(display.width(),display.height()))/2)-1, (display.height()/2 + (cos (iAngle*PI/180) * min(display.width(),display.height()))/2)-1, WHITE);
+          //Serial.print(iAngle);Serial.print("     ");Serial.print(sin (iAngle*PI/180)); Serial.print("     "); Serial.println(cos (iAngle*PI/180));    
+        }
+
     #endif
     display.display();
   #endif // OLED_DISPLAY
+
+
+
 }

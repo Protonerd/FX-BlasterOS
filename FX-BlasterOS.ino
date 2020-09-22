@@ -38,8 +38,10 @@ uint8_t AmmoCnt=20;
 
 #ifdef AMMOSWITCH
 bool ammoInserted;
-unsigned long timetracker1 = millis();
 #endif
+
+unsigned long timetracker1 = millis();
+
 /***************************************************************************************************
  * LED String variables
  */
@@ -94,18 +96,18 @@ bool play = false;
 unsigned int configAdress = 0;
 
 int16_t sAngle;
+uint8_t StatBarAnimPos=0;
 
 #ifdef OLED_DISPLAY
   #define OLED_RESET 4
   #if defined OLED_SCOPE
-    //#define SCREEN_WIDTH 64 // OLED display width, in pixels
-    //#define SCREEN_HEIGHT 48 // OLED display height, in pixels
+
     Adafruit_SSD1306 display(OLED_RESET);
   #endif
   #if defined OLED_STD
-    //#define SCREEN_WIDTH 128 // OLED display width, in pixels
-    //#define SCREEN_HEIGHT 32 // OLED display height, in pixels
-    Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+    //Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+    Adafruit_SSD1306 display(OLED_RESET);
   #endif
 #endif
 
@@ -139,6 +141,9 @@ void setup() {
   // Serial line for debug
   Serial.begin(115200);
 
+  Disable_FTDI(false);
+  Disable_MP3(false);
+  
   /***** LOAD CONFIG *****/
   // Get config from EEPROM if there is one
   // or initialise value with default ones set in StoreStruct
@@ -206,7 +211,7 @@ Serial.println(configAdress);
     storage.NrStatusBarPixels=0; // no status bar
   } 
 
-  if (CS_VOLUME > CS_PIXELLENGHT_BARRELL) {
+  if (CS_PIXELLENGHT_BARRELL > CS_LASTMEMBER) {
     storage.NrBarellPixels=1; // only nozzle light
   }
 
@@ -260,7 +265,9 @@ Serial.println(configAdress);
   mainButton.setClickTicks(CLICK);
   mainButton.setPressTicks(PRESS_MAIN);
   mainButton.attachClick(mainClick);
+#ifdef SINGLEBUTTON
   //mainButton.attachDoubleClick(mainDoubleClick);
+#endif
   mainButton.attachLongPressStart(mainLongPressStart);
   mainButton.attachLongPressStop(mainLongPressStop);
   mainButton.attachDuringLongPress(mainLongPress);
@@ -351,7 +358,7 @@ void loop() {
   auxButton.tick();
 #endif
 
-Serial.println(ActionModeSubStates);
+//Serial.println(ActionModeSubStates);
   /*//////////////////////////////////////////////////////////////////////////////////////////////////////////
    * ACTION MODE HANDLER
    */ /////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -374,6 +381,9 @@ Serial.println(ActionModeSubStates);
        PrevBlasterState=S_BLASTERON;
        lightOff(storage.NrStatusBarPixels+1,storage.NrStatusBarPixels + storage.NrBarellPixels);
        AmmoCnt=MAX_AMMO; // start action mode with fully loaded magazine
+       // restart the activity counter
+       timetracker1=millis();
+       StatBarAnimPos=0;
 #ifdef OLED_DISPLAY
        DisplayBlasterOnFrames();
        DisplayAmmoCount(AmmoCnt,sAngle);
@@ -571,6 +581,15 @@ Serial.println(ActionModeSubStates);
         }
      }
      #endif // FLAMETHROWER
+   else if (ActionModeSubStates==AS_PLASMABLAST) {
+    //uint8_t temp_flick_l;
+    //temp_flick_l=random(storage.NrBarellPixels/2);
+    FX_barellFlicker(storage.sndProfile[storage.soundFont].stunColor, true, storage.NrStatusBarPixels+random(storage.NrBarellPixels/2), storage.NrStatusBarPixels + storage.NrBarellPixels-random(storage.NrBarellPixels/2));
+   }
+   else if (ActionModeSubStates==AS_PROFILECHANGE) {
+    // load back the sub state from which we entered into the profile change mode
+    ActionModeSubStates=PrevActionModeSubStates;
+   }
    else if (ActionModeSubStates==AS_EMPTY) {
       #ifdef OLED_DISPLAY
               DisplayAmmoCount(AmmoCnt,sAngle);
@@ -606,7 +625,30 @@ Serial.println(ActionModeSubStates);
 #endif
    }
     }
-
+  // Status Bar Animation
+  if (millis()>timetracker1 and millis()-timetracker1 > STATBARANIM_START) {
+    //for (uint8_t dumpi =0; dumpi<sizeof(StatusBar_Animation);dumpi++) {
+    //  Serial.println(pgm_read_word_near(StatusBar_Animation + dumpi));
+    //}
+    //Serial.println("Start Status Bar Animation");
+    // check which round it is
+    if ((millis()-timetracker1) > (((StatBarAnimPos-1)*STARBARANIM_PERIOD)+STATBARANIM_START) ) {
+      lightOff(0, storage.NrBarellPixels-1);
+      StatBarAnimPos++;
+      Serial.println(sizeof(StatusBar_Animation));
+      if (StatBarAnimPos==sizeof(StatusBar_Animation)/2) { // because the size is in bytes and the values in the PROGMEM defined as 16bit chars
+        StatBarAnimPos=0;
+        timetracker1=millis()-STATBARANIM_START;
+      }
+      for (uint8_t sba =0; sba<storage.NrStatusBarPixels;sba++) {
+          //Serial.print(StatBarAnimPos);Serial.print("\t");Serial.print(sba);Serial.print("\t");Serial.println((uint16_t)StatusBar_Animation[StatBarAnimPos], HEX);
+        if ((pgm_read_word_near(StatusBar_Animation + StatBarAnimPos)&(1<<sba))) {
+          //lightOn(storage.sndProfile[storage.soundFont].blastColor,sba,sba);
+          lightOn({1,0,0},sba,sba);
+        }
+      }
+    }
+  }
 
   } ////END ACTION MODE HANDLER///////////////////////////////////////////////////////////////////////////////////////
 	/*//////////////////////////////////////////////////////////////////////////////////////////////////////////

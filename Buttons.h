@@ -39,7 +39,7 @@ void mainLongPressStop();
 void auxClick();
 void auxDoubleClick();
 void auxLongPressStart();
-//void auxLongPress();
+void auxLongPress();
 void auxLongPressStop();
 #endif
 

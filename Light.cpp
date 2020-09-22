@@ -134,7 +134,7 @@ void FX_SingleShot(uint16_t duration) {
             }
             pixels.sync(); // Sends the data to the LEDs
             //delay(10);
-            delay(duration/storage.NrBarellPixels);
+            delay(duration/(2*storage.NrBarellPixels));
           }
           lightOff(storage.NrStatusBarPixels + storage.NrBarellPixels-1, storage.NrStatusBarPixels + storage.NrBarellPixels-1);
           #ifdef BUZZMOTOR
@@ -227,7 +227,7 @@ void FX_SingleStun() {
           lightOff(storage.NrStatusBarPixels, storage.NrStatusBarPixels + storage.NrBarellPixels-1);
 }
 
-void RampBarrel(uint16_t RampDuration, bool DirectionUpDown, int8_t StartPixel=-1, int8_t StopPixel=-1) {
+void RampBarrel(uint16_t RampDuration, bool DirectionUpDown, bool FireEffect=true, int8_t StartPixel=-1, int8_t StopPixel=-1) {
 
     unsigned long ignitionStart = millis();  //record start of ramp function
     unsigned int i;
@@ -237,14 +237,18 @@ void RampBarrel(uint16_t RampDuration, bool DirectionUpDown, int8_t StartPixel=-
       StartPixel=storage.NrStatusBarPixels;
       StopPixel= storage.NrStatusBarPixels + storage.NrBarellPixels; 
     }
-      #ifdef FLAMETHROWER
+      
       for (i=StartPixel; i<StopPixel; i++) { // turn on/off one LED at a time
-         FireBlade(0);
+        if (FireEffect) {
+         #ifdef FLAMETHROWER
+          FireBlade(0);
+         #endif // FLAMETHROWER
+        }
+        else {
+          FX_barellFlicker(storage.sndProfile[storage.soundFont].stunColor, false);
+        }
          for(j=StartPixel; j<StopPixel; j++ ) { // fill up string with data
-            //if ((DirectionUpDown and j<=i) or (!DirectionUpDown and j<=StopPixel-1-i)){
-            if ((DirectionUpDown and j<=i) or (!DirectionUpDown and j>i)){
-            }
-            else if ((DirectionUpDown and j>i) or (!DirectionUpDown and j>StopPixel-1-i)){
+            if ((DirectionUpDown and j>i) or (!DirectionUpDown and j<i)){
               value.r=0;
               value.g=0;
               value.b=0; 
@@ -267,7 +271,7 @@ void RampBarrel(uint16_t RampDuration, bool DirectionUpDown, int8_t StartPixel=-
         //    heat[j]=0;
         //  }    
        // }
-        #endif // FLAMETHROWER
+        
 } // RampBlade
 
 void FX_Firethrower(int8_t StartPixel=-1, int8_t StopPixel=-1) {
@@ -287,6 +291,32 @@ void FX_Firethrower(int8_t StartPixel=-1, int8_t StopPixel=-1) {
       pixels.sync(); // Sends the data to the LEDs
       #endif // FLAMETHROWER
 } // Firethrower_FX
+
+
+void FX_barellFlicker(cRGB Flickercolor, bool pixelsync=true, int8_t StartPixel=-1 , int8_t StopPixel=-1) {
+
+    cRGB color;
+    
+    if (StartPixel == -1 or StopPixel==-1 or StopPixel<StartPixel or StartPixel>storage.NrBarellPixels or StopPixel>storage.NrBarellPixels) {  // if neither start nor stop is defined or invalid range, go through the whole stripe    // neopixel ramp code from jbkuma
+      StartPixel=storage.NrStatusBarPixels;
+      StopPixel= storage.NrStatusBarPixels + storage.NrBarellPixels; 
+    }  
+    uint16_t variation;
+    variation = constrain((abs(analogRead(SPK1) - analogRead(SPK2)))*31/storage.volume,0,255);
+    color.r = variation * Flickercolor.r/255;
+    color.g = variation * Flickercolor.g/255;
+    color.b = variation * Flickercolor.b/255;
+    for (uint8_t i = StartPixel; i <= StopPixel; i++) {
+        pixels.set_crgb_at(i, color); 
+    }
+    if (random(10)==1){
+      pixels.set_crgb_at(StartPixel+random(StopPixel-StartPixel), {100,100,100});
+    }
+    if (pixelsync){
+        pixels.sync();
+    }
+} // barellFlicker
+
 /*
  * Colors are defined in percentage of brightness.
  *
@@ -312,7 +342,7 @@ void pixelblade_KillKey_Enable() {
 void pixelblade_KillKey_Disable() {
   // cut power to the neopixels stripes by disconnecting their GND signal using the LS pins
     digitalWrite(LS1, HIGH);
-    //digitalWrite(LS2, HIGH);
+    digitalWrite(LS2, HIGH);
     //digitalWrite(LS3, HIGH);
 }
 
@@ -439,7 +469,7 @@ void getColorFix(uint8_t colorID) {
     break;
   }
 #endif // V_GENERIC
-#if defined V_MK3 or defined V_MK4 or defined V_MK5
+#if defined V_MK3 or defined V_MK4 or defined V_MKX
   switch (colorID) {
   case 0:
 //Red

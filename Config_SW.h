@@ -29,7 +29,7 @@
 // if you want to have the iconic Star Wars alphabet, uncomment AUREBESH
 // if line remains commented, code will revert back to default ASCII characters
   //#define AUREBESH
-#define CUSTOMTEXT "TK-83607"
+#define CUSTOMTEXT "Stormtrooper Blaster"
 #define INTROTEXT "FX-BlasterOS"
 #endif
 
@@ -51,6 +51,8 @@
 #define MAX_BRIGHTNESS    230
 #define HUM_RELAUNCH     5000
 #define PI 3.14159265
+#define STATBARANIM_START 3000
+#define STARBARANIM_PERIOD 1000
 
 /* LIGHT_EFFECTS
  *

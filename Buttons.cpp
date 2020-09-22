@@ -65,6 +65,9 @@ extern struct StoreStruct {
     uint8_t DisplaySkins;
   }sndProfile[SOUNDFONT_QUANTITY];
 }storage;
+extern unsigned long timetracker1;
+extern uint8_t StatBarAnimPos;
+
 
 // ====================================================================================
 // ===               			BUTTONS CALLBACK FUNCTIONS                 			===
@@ -87,7 +90,7 @@ void ConfigMenuButtonEventHandler(ButtonActionEnum ButtonActionType){
           #if defined V_MK2 or defined V_MK3
           confParseValue(modification, 0, 7, 1);
           #endif // Variants
-          #if defined V_MK4 or defined V_MK5
+          #if defined V_MK4 or defined V_MKX
           confParseValue(modification, 0, 15, 1);
           #endif // Variants
           modification = value;
@@ -107,7 +110,7 @@ void ConfigMenuButtonEventHandler(ButtonActionEnum ButtonActionType){
           #if defined V_MK2 or defined V_MK3
           confParseValue(modification, 0, 7, 1);
           #endif // Variants
-          #if defined V_MK4 or defined V_MK5
+          #if defined V_MK4 or defined V_MKX
           confParseValue(modification, 0, 15, 1);
           #endif // Variants
           modification = value;
@@ -174,7 +177,8 @@ void mainClick() {
 #endif
 //S_STANDBY, S_BLASTERON, S_CONFIG, S_SLEEP, S_JUKEBOX
   if (BlasterState==S_BLASTERON) {
- 
+    timetracker1=millis();
+    StatBarAnimPos=0;
      // AS_BLASTER_MODE, AS_STUN_MODE, AS_REPEATER, AS_BLAST, AS_STUN, AS_CLIPIN, AS_CLIPOUT, AS_EMPTY, AS_FULL, AS_MANUALRELOAD, AS_SWITCHOFF, AS_JAM, AS_UNJAM, AS_OVERHEAT
     if (ActionModeSubStates==AS_BLASTER_MODE) {
      /*
@@ -189,6 +193,29 @@ void mainClick() {
       ActionModeSubStates=AS_MEGABLAST;
     }
     #ifdef SINGLEBUTTON
+//    if (ActionModeSubStates==AS_REPEATER) {
+//      ActionModeSubStates=AS_BLASTER_MODE;
+//    } 
+//    else if (ActionModeSubStates==AS_PLASMABLAST) {
+//      // release electrocute bolt
+//      SinglePlay_Sound(soundFont.getZap((storage.soundFont)*NR_FILE_SF)); 
+//      RampBarrel(2000, false, false);
+//      //delay(1000);
+//      ActionModeSubStates=AS_STUN_MODE;
+//      lightOff(storage.NrStatusBarPixels,storage.NrStatusBarPixels + storage.NrBarellPixels);
+//    }
+//    else if (ActionModeSubStates==AS_FLAMETHROWER) {
+//      ActionModeSubStates=AS_MEGABLAST_MODE;
+//      RampBarrel(soundFont.getFirethrowerRampDuration(), false);
+//      Pause_Sound();
+//      lightOff(storage.NrStatusBarPixels,storage.NrStatusBarPixels + storage.NrBarellPixels);
+//      #ifdef BUZZMOTOR
+//      digitalWrite(BUZZMOTOR,LOW);
+//      #endif
+//    }   
+//    else if (ActionModeSubStates==AS_FULL) { // activate last blaster mode before empty state
+//      ActionModeSubStates=PrevActionModeSubStates;
+//    } 
     else if (ActionModeSubStates==AS_REPEATER_MODE) { // start dakka-dakka
       ActionModeSubStates=AS_REPEATER;
     } 
@@ -262,60 +289,27 @@ void mainLongPressStart() {
 //S_STANDBY, S_BLASTERON, S_CONFIG, S_SLEEP, S_JUKEBOX
      // AS_BLASTER_MODE, AS_STUN_MODE, AS_REPEATER, AS_BLAST, AS_STUN, AS_CLIPIN, AS_CLIPOUT, AS_EMPTY, AS_FULL, AS_MANUALRELOAD, AS_SWITCHOFF, AS_JAM, AS_UNJAM, AS_OVERHEAT
   if (BlasterState==S_BLASTERON) {
+    timetracker1=millis();
+    StatBarAnimPos=0;
   #ifdef SINGLEBUTTON
     // in blaster on mode long press serves as mode switch trigger
     if (ActionModeSubStates==AS_SWITCHOFF or ActionModeSubStates==AS_MANUALRELOAD) {
      ActionModeSubStates=AS_BLASTER_MODE;
-     //DisplayBlasterStatus("BLAST  ", false);
      StatusBar_ModeChange(1);  
      delay(500);  
     }    
     else if (ActionModeSubStates==AS_BLASTER_MODE) {
-      #if defined V_MK1 or defined V_MK2 // goto stun mode
+      #if defined V_MKX
         ActionModeSubStates=AS_STUN_MODE;
-        //DisplayBlasterStatus("STUN   ", false);
-        StatusBar_ModeChange(2);  
-        delay(500);      
-      #endif
-      #if defined V_MK3
-        ActionModeSubStates=AS_REPEATER_MODE;
-        //DisplayBlasterStatus("REPEAT ", false);
-        StatusBar_ModeChange(2);  
-        delay(500);  
-      #endif
-      #if defined V_MK4 or defined V_MK5
-        ActionModeSubStates=AS_STUN_MODE;
-        //DisplayBlasterStatus("STUN   ", false);
         StatusBar_ModeChange(2);  
         delay(500);  
       #endif
     }
-    else if (ActionModeSubStates==AS_REPEATER_MODE) {
-      #if defined V_MK3
-        ActionModeSubStates=AS_STUN_MODE;
-        //DisplayBlasterStatus("STUN   ", false);
-        StatusBar_ModeChange(3);  
-        delay(500);
-      #endif  
+    else if (ActionModeSubStates==AS_REPEATER_MODE) { 
     }
     else if (ActionModeSubStates==AS_STUN_MODE) {
-      #if defined V_MK1 or defined V_MK2 // goto stun mode
-        ActionModeSubStates=AS_SWITCHOFF;
-        #if defined OLED_STD      
-          DisplayBlasterStatus("PWRDWN ", false);
-        #endif
-        StatusBar_ModeChange(3);  
-        delay(500);    
-      #endif
-      #if defined V_MK3
-        ActionModeSubStates=AS_SWITCHOFF;      
-        DisplayBlasterStatus("PWRDWN ", false);
-        StatusBar_ModeChange(4);  
-        delay(500); 
-      #endif
-      #if defined V_MK4 or defined V_MK5
+      #if defined V_MKX
         ActionModeSubStates=AS_MEGABLAST_MODE;
-        //DisplayBlasterStatus("SPECIAL", false);
         StatusBar_ModeChange(3);  
         delay(500);
       #endif
@@ -339,17 +333,39 @@ void mainLongPressStart() {
      // AS_BLASTER_MODE, AS_STUN_MODE, AS_REPEATER, AS_BLAST, AS_STUN, AS_CLIPIN, AS_CLIPOUT, AS_EMPTY, AS_FULL, AS_MANUALRELOAD, AS_SWITCHOFF, AS_JAM, AS_UNJAM, AS_OVERHEAT
   #endif // SINGLEBUTTON
   #ifndef SINGLEBUTTON
-    if (ActionModeSubStates==AS_MEGABLAST_MODE) {
-      //SinglePlay_Sound(soundFont.getFlameThrower((storage.soundFont)*NR_FILE_SF));
-      LoopPlay_Sound(soundFont.getFlameThrower((storage.soundFont)*NR_FILE_SF));
-      #ifdef BUZZMOTOR
-      digitalWrite(BUZZMOTOR,HIGH);
-      #endif
-      RampBarrel(soundFont.getFirethrowerRampDuration(), true);
-      ActionModeSubStates=AS_FLAMETHROWER;
+    // change to next sound font if during aux button kept depressed the main button is also pressed
+    if (digitalRead(AUX_BUTTON)==LOW ) {
+      if (storage.soundFont==SOUNDFONT_QUANTITY - 1) {
+        storage.soundFont=0;
+      }
+      else {
+        storage.soundFont++;
+      }
+      SinglePlay_Sound(soundFont.getBoot((storage.soundFont)*NR_FILE_SF));
+      delay(2000);
+      PrevActionModeSubStates=ActionModeSubStates;
+      ActionModeSubStates=AS_PROFILECHANGE;
+      
     }
+    else {
+      if (ActionModeSubStates==AS_MEGABLAST_MODE) {
+        //SinglePlay_Sound(soundFont.getFlameThrower((storage.soundFont)*NR_FILE_SF));
+        LoopPlay_Sound(soundFont.getFlameThrower((storage.soundFont)*NR_FILE_SF));
+        #ifdef BUZZMOTOR
+        digitalWrite(BUZZMOTOR,HIGH);
+        #endif
+        RampBarrel(soundFont.getFirethrowerRampDuration(), true);
+        ActionModeSubStates=AS_FLAMETHROWER;
+      }
+      else if (ActionModeSubStates==AS_STUN_MODE) {
+        // release electrocute bolt
+        ActionModeSubStates=AS_PLASMABLAST;
+        LoopPlay_Sound(soundFont.getArch((storage.soundFont)*NR_FILE_SF));
+      }
+    }
+
     
-  #endif
+  #endif // not SINGLEBUTTON
   }
   else if (BlasterState==S_CONFIG) {
     if (ConfigModeSubStates== CS_LASTMEMBER-1) {
@@ -387,6 +403,8 @@ void mainLongPress() {
   Serial.println(F("Main button longPress..."));
 #endif
   if (BlasterState==S_BLASTERON) {
+    timetracker1=millis();
+    StatBarAnimPos=0;
     #ifndef SINGLEBUTTON
     if (ActionModeSubStates==AS_BLASTER_MODE) {
       ActionModeSubStates=AS_REPEATER;
@@ -408,6 +426,8 @@ void mainLongPressStop() {
 #endif
 //S_STANDBY, S_BLASTERON, S_CONFIG, S_SLEEP, S_JUKEBOX
   if (BlasterState==S_BLASTERON) {
+    timetracker1=millis();
+    StatBarAnimPos=0;
     #ifdef SINGLEBUTTON
     if (ActionModeSubStates==AS_FULL or ActionModeSubStates== AS_MANUALRELOAD) {
       PrevActionModeSubStates=AS_MANUALRELOAD;
@@ -440,7 +460,15 @@ void mainLongPressStop() {
     #ifndef SINGLEBUTTON
     if (ActionModeSubStates==AS_REPEATER) {
       ActionModeSubStates=AS_BLASTER_MODE;
-    }  
+    } 
+    else if (ActionModeSubStates==AS_PLASMABLAST) {
+      // release electrocute bolt
+      SinglePlay_Sound(soundFont.getZap((storage.soundFont)*NR_FILE_SF)); 
+      RampBarrel(2000, false, false);
+      //delay(1000);
+      ActionModeSubStates=AS_STUN_MODE;
+      lightOff(storage.NrStatusBarPixels,storage.NrStatusBarPixels + storage.NrBarellPixels);
+    }
     else if (ActionModeSubStates==AS_FLAMETHROWER) {
       ActionModeSubStates=AS_MEGABLAST_MODE;
       RampBarrel(soundFont.getFirethrowerRampDuration(), false);
@@ -457,6 +485,29 @@ void mainLongPressStop() {
   }
 } // mainLongPressStop
 
+//#ifdef SINGLEBUTTON
+//void mainDoubleClick() {
+//    if (ActionModeSubStates==AS_MEGABLAST_MODE) {
+//      //SinglePlay_Sound(soundFont.getFlameThrower((storage.soundFont)*NR_FILE_SF));
+//      LoopPlay_Sound(soundFont.getFlameThrower((storage.soundFont)*NR_FILE_SF));
+//      #ifdef BUZZMOTOR
+//      digitalWrite(BUZZMOTOR,HIGH);
+//      #endif
+//      RampBarrel(soundFont.getFirethrowerRampDuration(), true);
+//      ActionModeSubStates=AS_FLAMETHROWER;
+//    }
+//    else if (ActionModeSubStates==AS_BLASTER_MODE) {
+//      ActionModeSubStates=AS_REPEATER;
+//    }  
+//    else if (ActionModeSubStates==AS_STUN_MODE) {
+//      // release electrocute bolt
+//      ActionModeSubStates=AS_PLASMABLAST;
+//      LoopPlay_Sound(soundFont.getArch((storage.soundFont)*NR_FILE_SF));
+//    }
+//
+//}
+//#endif // SINGLEBUTTON
+
 #ifndef SINGLEBUTTON
 void auxClick() {
    Serial.println(F("Aux button click"));
@@ -470,6 +521,8 @@ void auxClick() {
      delay(500);  
     }    
     else if (ActionModeSubStates==AS_BLASTER_MODE) {
+      timetracker1=millis();
+      StatBarAnimPos=0;
       #if defined V_MK1 or V_MK2 // goto stun mode
         ActionModeSubStates=AS_STUN_MODE;
         //DisplayBlasterStatus("STUN   ");
@@ -482,7 +535,7 @@ void auxClick() {
         StatusBar_ModeChange(2);  
         delay(500);  
       #endif
-      #if defined V_MK4 or defined V_MK5
+      #if defined V_MK4 or defined V_MKX
         ActionModeSubStates=AS_STUN_MODE;
         //DisplayBlasterStatus("STUN   ");
         StatusBar_ModeChange(2);  
@@ -510,7 +563,7 @@ void auxClick() {
         StatusBar_ModeChange(4);  
         delay(500); 
       #endif
-      #if defined V_MK4 or defined V_MK5
+      #if defined V_MK4 or defined V_MKX
         ActionModeSubStates=AS_MEGABLAST_MODE;
         //DisplayBlasterStatus("MEGABL ");
         StatusBar_ModeChange(3);  
@@ -550,9 +603,11 @@ void auxLongPressStart() {
       PrevBlasterState=S_CONFIG;
   }
   else if (BlasterState==S_BLASTERON) {
+    timetracker1=millis();
+    StatBarAnimPos=0;
     if (ActionModeSubStates==AS_EMPTY) {
       ActionModeSubStates=AS_MANUALRELOAD;
-    }     
+    }
   }
   else if (BlasterState==S_STANDBY) {
       BlasterState=S_JUKEBOX;
@@ -566,6 +621,11 @@ void auxLongPressStart() {
 } // auxLongPressStart
 
 //void auxLongPress() {
+//  if (BlasterState==S_BLASTERON) {
+//    timetracker1=millis();
+//    StatBarAnimPos=0;
+//
+//  }
 //} // auxLongPress
 
 void auxLongPressStop() {
